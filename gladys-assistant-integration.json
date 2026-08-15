@@ -1,0 +1,163 @@
+{
+  "manifest_version": 1,
+  "type": "device",
+  "name": "Enphase IQ Gateway",
+  "description": {
+    "en": "Local monitoring of your Enphase IQ Gateway: production, consumption and micro-inverters.",
+    "fr": "Suivi local de votre IQ Gateway Enphase : production, consommation et micro-onduleurs."
+  },
+  "version": "0.1.0",
+  "docker_image": "ghcr.io/yourname/gladys-enphase:0.1.0",
+  "gladys_version": ">=4.86.0",
+  "cover_image": "https://raw.githubusercontent.com/yourname/gladys-enphase/main/cover.png",
+  "categories": ["energy"],
+  "transports": ["local"],
+  "network_discovery": [
+    {
+      "type": "mdns",
+      "service": "_enphase-envoy._tcp"
+    }
+  ],
+  "config_schema": [
+    {
+      "key": "intro",
+      "type": "section",
+      "label": {
+        "en": "Getting started",
+        "fr": "Pour commencer"
+      },
+      "description": {
+        "en": "Generate a local access token on your IQ Gateway (firmware D8+): from the gateway web UI, go to System > Local Access, sign the Enphase agreement and copy the token. The integration reads it directly on your local network — no cloud account needed.",
+        "fr": "Générez un jeton d'accès local sur votre IQ Gateway (firmware D8+) : depuis l'interface web du gateway, allez dans Système > Accès local, signez l'accord Enphase et copiez le jeton. L'intégration le lit directement sur votre réseau local — aucun compte cloud nécessaire."
+      },
+      "links": [
+        {
+          "url": "https://enphase.com/download/iq-gateway-access-using-token-tech-brief",
+          "label": {
+            "en": "Enphase token tech brief",
+            "fr": "Documentation technique du jeton Enphase"
+          }
+        }
+      ]
+    },
+    {
+      "key": "gateway_ip",
+      "type": "string",
+      "label": {
+        "en": "Gateway IP address",
+        "fr": "Adresse IP du gateway"
+      },
+      "description": {
+        "en": "The local IP address of your IQ Gateway, e.g. 192.168.1.42. Use the \"Detect gateway\" button to find it on your network.",
+        "fr": "L'adresse IP locale de votre IQ Gateway, ex. 192.168.1.42. Utilisez le bouton « Détecter le gateway » pour la trouver sur votre réseau."
+      },
+      "placeholder": {
+        "en": "192.168.1.42",
+        "fr": "192.168.1.42"
+      },
+      "required": true
+    },
+    {
+      "key": "access_token",
+      "type": "secret",
+      "label": {
+        "en": "Local access token",
+        "fr": "Jeton d'accès local"
+      },
+      "description": {
+        "en": "The JWT token generated in the gateway web UI (System > Local Access). It is stored encrypted by Gladys and never sent to the frontend.",
+        "fr": "Le jeton JWT généré dans l'interface web du gateway (Système > Accès local). Il est stocké chiffré par Gladys et jamais renvoyé au frontend."
+      },
+      "placeholder": {
+        "en": "eyJhbGciOi...",
+        "fr": "eyJhbGciOi..."
+      },
+      "required": true
+    },
+    {
+      "key": "poll_frequency",
+      "type": "number",
+      "label": {
+        "en": "Refresh interval (s)",
+        "fr": "Intervalle de rafraîchissement (s)"
+      },
+      "description": {
+        "en": "How often the gateway is polled, in seconds. Production data updates every 5 seconds on the gateway; a 15-60 s poll is a good balance.",
+        "fr": "Fréquence d'interrogation du gateway, en secondes. Les données de production sont mises à jour toutes les 5 secondes sur le gateway ; un poll de 15 à 60 s est un bon compromis."
+      },
+      "required": false,
+      "default": 60,
+      "min": 15,
+      "max": 600
+    },
+    {
+      "key": "include_inverters",
+      "type": "boolean",
+      "label": {
+        "en": "Monitor each micro-inverter",
+        "fr": "Suivre chaque micro-onduleur"
+      },
+      "description": {
+        "en": "Publish one device per micro-inverter with its current production, to spot a failing unit (a dead inverter reports 0 W).",
+        "fr": "Publie un appareil par micro-onduleur avec sa production actuelle, pour repérer une unité défaillante (un onduleur mort rapporte 0 W)."
+      },
+      "required": false,
+      "default": true
+    },
+    {
+      "key": "pinned_cert_fingerprint",
+      "type": "string",
+      "label": {
+        "en": "Gateway certificate fingerprint (optional)",
+        "fr": "Empreinte du certificat du gateway (optionnel)"
+      },
+      "description": {
+        "en": "Optional SHA-256 fingerprint of the gateway's certificate (e.g. AB:CD:12:34:…). When set, the integration only trusts a gateway whose certificate matches it — the recommended defense against a device impersonating your gateway on the local network. Get it from your browser's certificate view, or with: openssl s_client -connect <gateway_ip>:443 < /dev/null 2>/dev/null | openssl x509 -noout -fingerprint -sha256.",
+        "fr": "Empreinte SHA-256 (optionnelle) du certificat du gateway (ex. AB:CD:12:34:…). Si renseignée, l'intégration ne fait confiance qu'à un gateway dont le certificat lui correspond — protection recommandée contre un appareil usurpant votre gateway sur le réseau local. Obtenez-la depuis le certificat dans votre navigateur, ou avec : openssl s_client -connect <adresse_gateway>:443 < /dev/null 2>/dev/null | openssl x509 -noout -fingerprint -sha256."
+      },
+      "placeholder": {
+        "en": "AB:CD:EF:12:34:…",
+        "fr": "AB:CD:EF:12:34:…"
+      },
+      "required": false
+    }
+  ],
+  "actions": [
+    {
+      "key": "detect_gateway",
+      "label": {
+        "en": "Detect gateway",
+        "fr": "Détecter le gateway"
+      },
+      "description": {
+        "en": "Scans the local network for an Enphase IQ Gateway (mDNS _enphase-envoy._tcp) and fills in its IP address.",
+        "fr": "Scanne le réseau local à la recherche d'un IQ Gateway Enphase (mDNS _enphase-envoy._tcp) et renseigne son adresse IP."
+      },
+      "timeout_seconds": 30
+    },
+    {
+      "key": "test_gateway",
+      "label": {
+        "en": "Test the gateway connection",
+        "fr": "Tester la connexion au gateway"
+      },
+      "description": {
+        "en": "Checks the token and reads the current production: a summary is shown under the button.",
+        "fr": "Vérifie le jeton et lit la production actuelle : un résumé s'affiche sous le bouton."
+      },
+      "timeout_seconds": 15
+    },
+    {
+      "key": "list_inverters",
+      "label": {
+        "en": "List micro-inverters",
+        "fr": "Lister les micro-onduleurs"
+      },
+      "description": {
+        "en": "Lists every micro-inverter reported by the gateway, with its last report time and power.",
+        "fr": "Liste chaque micro-onduleur rapporté par le gateway, avec sa dernière communication et sa puissance."
+      },
+      "timeout_seconds": 15
+    }
+  ]
+}
