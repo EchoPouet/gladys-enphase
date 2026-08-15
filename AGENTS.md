@@ -77,6 +77,28 @@ npm test               # Unit tests, via the built-in `node --test` runner
 
 Tests live in [`test/`](test/) and use Node's native test runner — no extra test framework to install. Add a `*.test.js` file next to the ones already there and it is picked up automatically.
 
+## Commit message convention
+
+All commit messages must follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification:
+
+```
+<type>(<optional scope>): <subject>
+```
+
+- Required **type** from the conventional list: `feat`, `fix`, `docs`, `chore`, `refactor`, `perf`, `test`, `build`, `ci`, `style`… Use `!` after the type/scope (e.g. `feat!:`) for breaking changes.
+- **Scope** is optional but encouraged (e.g. `feat(devices):`, `docs(readme):`).
+- Keep the subject short, imperative, and lowercase — no trailing period.
+
+Examples:
+
+```
+feat: add IQ Battery device support
+fix(enphase): handle gateway reconnection on 503
+docs: add Apache License 2.0
+```
+
+Use `git commit --amend` (on unpushed commits) or `git rebase` to rewrite any message that does not conform.
+
 ## Development notes
 
 - All external identifiers are prefixed with `ext:<selector>:` — always build them with `gladys.externalIds(type, platformId)` (or the lower-level `gladys.externalId(suffix)`); the server rejects anything else. Derive `platformId` from the unique id the external platform gives you (serial, cloud id, MAC…), never from a hard-coded label.
