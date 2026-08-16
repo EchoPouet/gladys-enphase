@@ -9,13 +9,9 @@
   "version": "1.0.0",
   "docker_image": "ghcr.io/echopouet/gladys-enphase:1.0.0",
   "gladys_version": ">=4.86.0",
-  "cover_image": "https://raw.githubusercontent.com/yourname/gladys-enphase/main/cover.png",
-  "categories": [
-    "energy"
-  ],
-  "transports": [
-    "local"
-  ],
+  "cover_image": "https://raw.githubusercontent.com/EchoPouet/gladys-enphase/main/cover.png",
+  "categories": ["energy"],
+  "transports": ["local"],
   "network_discovery": [
     {
       "type": "mdns",
