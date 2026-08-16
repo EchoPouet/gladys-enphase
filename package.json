@@ -1,6 +1,6 @@
 {
   "name": "gladys-enphase",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "Gladys Assistant external integration for the Enphase IQ Gateway (local API, token D8+).",
   "type": "module",
