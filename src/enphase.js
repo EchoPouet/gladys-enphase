@@ -9,7 +9,7 @@
 //
 // Endpoints used:
 //   GET /auth/check_jwt                   -> token validity
-//   GET /production.json?details=1        -> live power + today/7d/lifetime Wh
+//   GET /production.json                 -> live power + today/7d/lifetime Wh
 //   GET /api/v1/production                -> optional fallback (today/7d/lifetime Wh)
 //   GET /api/v1/production/inverters      -> per-inverter report (serial, W)
 //   GET /api/v1/site_info                 -> gateway identity (serial, name)
@@ -21,6 +21,7 @@
 // -----------------------------------------------------------------------------
 
 import { Agent as HttpsAgent, request as httpsRequest } from 'node:https';
+import { isIP } from 'node:net';
 
 /**
  * Error raised when the gateway is unreachable, refuses the token, or answers
@@ -92,6 +93,16 @@ export function resetPinnedCertFingerprint() {
 }
 
 /**
+ * Format a gateway address as a URL host. IPv6 literals must be wrapped in
+ * brackets (`[...]`) or the WHATWG URL parser rejects the colons; IPv4 and
+ * hostnames are returned as-is.
+ * @param {string} ip
+ */
+function formatHost(ip) {
+  return isIP(ip) === 6 ? `[${ip}]` : ip;
+}
+
+/**
  * Perform a raw GET against the gateway and return the response body as text.
  * @param {string} ip gateway IP address
  * @param {string} path absolute URL path (may include a query string)
@@ -101,7 +112,7 @@ export function resetPinnedCertFingerprint() {
  * @returns {Promise<string>} raw response body
  */
 function rawRequest(ip, path, { token, timeoutMs = REQUEST_TIMEOUT_MS }) {
-  const url = new URL(`https://${ip}${path}`);
+  const url = new URL(`https://${formatHost(ip)}${path}`);
   return new Promise((resolve, reject) => {
     let settled = false;
     let deadline = null;
@@ -313,7 +324,7 @@ export async function fetchSystem(ip, token) {
  * }>}
  */
 export async function fetchProduction(ip, token) {
-  const productionJson = await getJson(ip, '/production.json?details=1', { token });
+  const productionJson = await getJson(ip, '/production.json', { token });
 
   // /api/v1/production is optional: some firmwares do not serve it. Its values
   // are only used as a fallback when /production.json lacks them.

@@ -53,6 +53,7 @@ Si le certificat du gateway change un jour (mise à jour du firmware, remplaceme
 
 - **« Jeton refusé »** : le jeton est invalide, expiré ou révoqué. Régénérez-le dans le menu du gateway (Système > Accès local).
 - **« Gateway injoignable »** : vérifiez que le gateway est allumé, sur le même réseau, et que l'IP est correcte (le bouton « Détecter le gateway » la retrouve par mDNS).
+- **« Détecter le gateway » ne trouve rien** : le gateway publie plusieurs adresses en mDNS, dont des adresses IPv6. L'intégration ne retient qu'une adresse privée (IPv4 en priorité) et n'envoie jamais le jeton vers une adresse publique — si aucune adresse privée n'est publiée, renseignez l'IP LAN du gateway manuellement.
 - **Aucune consommation affichée** : votre installation n'a pas de compteur de consommation branché — l'intégration ne publie les données que si le gateway les rapporte.
 - **« Empreinte du certificat refusée »** : le certificat du gateway a changé ou un appareil tente de l'usurper. Relisez l'empreinte réelle et mettez à jour le champ.
 - Le badge de transport reste **local** quand tout va bien, et passe à **injoignable** quand le gateway ne répond plus.

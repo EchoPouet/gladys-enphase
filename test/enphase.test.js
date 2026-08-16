@@ -116,6 +116,15 @@ test('checkJwt accepts a plain-text answer (no JSON parsing)', async () => {
   assert.equal(ok, true);
 });
 
+test('checkJwt brackets an IPv6 literal in the request hostname', async () => {
+  mock.route('/auth/check_jwt', 200, 'valid token');
+  const ok = await checkJwt('fd12::1', TOKEN);
+  assert.equal(ok, true);
+  // The URL parser requires brackets around an IPv6 literal; without them the
+  // request would throw ERR_INVALID_URL before ever reaching the gateway.
+  assert.equal(mock.seen[0].hostname, '[fd12::1]');
+});
+
 test('checkJwt falls back to /production.json when /auth/check_jwt is 404', async () => {
   mock.route('/auth/check_jwt', 404, null);
   mock.route('/production.json', 200, { wattsNow: 3500 });
@@ -185,8 +194,19 @@ test('fetchSystem surfaces a non-404 error without falling back', async () => {
   assert.equal(mock.seen.length, 1);
 });
 
+test('fetchProduction reads /production.json without the heavy details flag', async () => {
+  mock.route('/production.json', 200, {
+    production: [
+      { type: 'inverters', activeCount: 1, wNow: 1000, whToday: 5000, whLifetime: 100000 },
+    ],
+  });
+  mock.route('/api/v1/production', 404, null);
+  await fetchProduction(IP, TOKEN);
+  assert.equal(mock.seen[0].path, '/production.json');
+});
+
 test('fetchProduction merges production.json and api/v1/production', async () => {
-  mock.route('/production.json?details=1', 200, {
+  mock.route('/production.json', 200, {
     production: [
       {
         type: 'eim',
@@ -231,7 +251,7 @@ test('fetchProduction merges production.json and api/v1/production', async () =>
 });
 
 test('fetchProduction works when /api/v1/production is 404', async () => {
-  mock.route('/production.json?details=1', 200, {
+  mock.route('/production.json', 200, {
     production: [
       {
         type: 'eim',
@@ -253,7 +273,7 @@ test('fetchProduction works when /api/v1/production is 404', async () => {
 });
 
 test('fetchProduction reads whToday/whLastSevenDays from the eim entry', async () => {
-  mock.route('/production.json?details=1', 200, {
+  mock.route('/production.json', 200, {
     production: [
       {
         type: 'eim',
@@ -274,7 +294,7 @@ test('fetchProduction reads whToday/whLastSevenDays from the eim entry', async (
 });
 
 test('fetchProduction handles a gateway without meter or battery', async () => {
-  mock.route('/production.json?details=1', 200, {
+  mock.route('/production.json', 200, {
     production: [
       { type: 'inverters', activeCount: 2, wNow: 2400, whToday: 8000, whLifetime: 3000000 },
     ],

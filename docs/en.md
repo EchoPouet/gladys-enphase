@@ -53,6 +53,7 @@ Note: the pin protects every connection made after it is set. Always read the fi
 
 - **“Token refused”**: the token is invalid, expired or revoked. Regenerate it in the gateway menu (System > Local Access).
 - **“Gateway unreachable”**: check that the gateway is powered, on the same network, and that the IP is correct (the “Detect gateway” button finds it over mDNS).
+- **“Detect gateway” finds nothing**: the gateway advertises several addresses over mDNS, including IPv6 ones. The integration only keeps a private address (IPv4 first) and never sends the token to a public address — if no private address is advertised, enter the gateway's LAN IP manually.
 - **No consumption shown**: your installation has no consumption meter connected — the integration only publishes data the gateway actually reports.
 - **Certificate fingerprint rejected**: the gateway certificate changed or a device is trying to impersonate the gateway. Re-read the real fingerprint and update the field.
 - The transport badge stays **local** when all is well, and switches to **unreachable** when the gateway stops answering.

@@ -104,3 +104,32 @@ function clampPollFrequency(value) {
 export function isConfigured(config) {
   return config.gateway_ip.length > 0 && config.access_token.length > 0;
 }
+
+/**
+ * Pick the usable gateway addresses out of the list a gateway advertises over
+ * mDNS. Only PRIVATE addresses are candidates — a public address (e.g. a global
+ * IPv6) must never become the target, or the integration would send the JWT
+ * token to it. IPv4 is preferred over IPv6: the gateway local API is most
+ * reliable over IPv4, and its IPv6 addresses are often global (public) or
+ * link-local (unroutable from the container). Duplicates are removed.
+ * @param {Array<string|undefined|null>} addresses
+ * @returns {string[]} private candidates, IPv4 first
+ */
+export function selectPrivateAddresses(addresses = []) {
+  const seen = new Set();
+  const candidates = [];
+  for (const raw of addresses) {
+    const address = String(raw ?? '').trim();
+    if (!address || seen.has(address)) continue;
+    seen.add(address);
+    if (isValidGatewayIp(address)) candidates.push(address);
+  }
+  candidates.sort((a, b) => {
+    const aIsV4 = isIP(a) === 4;
+    const bIsV4 = isIP(b) === 4;
+    if (aIsV4 && !bIsV4) return -1;
+    if (!aIsV4 && bIsV4) return 1;
+    return 0;
+  });
+  return candidates;
+}

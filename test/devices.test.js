@@ -77,7 +77,7 @@ function mockFullGateway() {
     name: 'La Maison Solaire',
     inventory: { serial_number: '1234567890' },
   });
-  mock.route('/production.json?details=1', 200, {
+  mock.route('/production.json', 200, {
     production: [
       {
         type: 'eim',
@@ -168,7 +168,7 @@ test('no consumption or battery features when the gateway lacks them', async () 
     name: 'Simple Solar',
     inventory: { serial_number: '9876543210' },
   });
-  mock.route('/production.json?details=1', 200, {
+  mock.route('/production.json', 200, {
     production: [
       { type: 'inverters', activeCount: 2, wNow: 2400, whToday: 8000, whLifetime: 3000000 },
     ],

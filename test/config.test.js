@@ -10,6 +10,7 @@ import {
   isValidGatewayIp,
   normalizeConfig,
   POLL_FREQUENCY_LIMITS,
+  selectPrivateAddresses,
 } from '../src/config.js';
 
 test('normalizeConfig fills defaults when nothing is given', () => {
@@ -74,6 +75,40 @@ test('isValidGatewayIp accepts private IPv4/IPv6 and rejects the rest', () => {
   assert.equal(isValidGatewayIp('fe80::1'), true); // link-local
   assert.equal(isValidGatewayIp('::1'), true); // loopback
   assert.equal(isValidGatewayIp('2001:4860:4860::8888'), false); // public
+});
+
+test('selectPrivateAddresses keeps private addresses, IPv4 first', () => {
+  assert.deepEqual(
+    selectPrivateAddresses([
+      '2a02:842a:ada0:d101:8a01:f9ff:fec0:f6bd', // public IPv6 (global unicast)
+      'fdc0:181:9772:435a:21d:c0ff:fe86:18bd', // unique-local IPv6
+      '192.168.1.42', // private IPv4
+      'fe80::1', // link-local IPv6
+    ]),
+    ['192.168.1.42', 'fdc0:181:9772:435a:21d:c0ff:fe86:18bd', 'fe80::1'],
+  );
+});
+
+test('selectPrivateAddresses drops public, hostname and empty entries, and dedupes', () => {
+  assert.deepEqual(
+    selectPrivateAddresses([
+      '8.8.8.8', // public IPv4
+      '2001:4860:4860::8888', // public IPv6
+      'my-gateway.local', // hostname
+      '192.168.1.42',
+      '192.168.1.42', // duplicate
+      '',
+      null,
+      undefined,
+    ]),
+    ['192.168.1.42'],
+  );
+});
+
+test('selectPrivateAddresses returns [] when nothing is usable', () => {
+  assert.deepEqual(selectPrivateAddresses(['8.8.8.8', 'evil.example.org']), []);
+  assert.deepEqual(selectPrivateAddresses([]), []);
+  assert.deepEqual(selectPrivateAddresses(), []);
 });
 
 test('normalizeConfig blanks an invalid gateway IP (no arbitrary target)', () => {

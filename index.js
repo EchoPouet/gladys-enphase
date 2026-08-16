@@ -18,7 +18,7 @@
 // -----------------------------------------------------------------------------
 
 import { DEVICE_TRANSPORTS, GladysIntegration, logger } from '@gladysassistant/integration-sdk';
-import { isConfigured, isValidGatewayIp, normalizeConfig } from './src/config.js';
+import { isConfigured, normalizeConfig, selectPrivateAddresses } from './src/config.js';
 import {
   buildDiscoveredDevices,
   DEVICE_BLUEPRINTS,
@@ -231,40 +231,50 @@ gladys.onScanRequest(async () => {
   await publishDevices();
 });
 
-/** mDNS scan mediated by the core (declared in the manifest). */
+/**
+ * mDNS scan mediated by the core (declared in the manifest).
+ *
+ * The gateway advertises several addresses at once (its LAN IPv4 plus one or
+ * more IPv6 — link-local, unique-local, and often a public global address).
+ * Only a PRIVATE address is ever persisted, IPv4 first: the token is never
+ * sent to a public address, and the local API is most reliable over IPv4.
+ */
 async function detectGateway() {
   try {
     const results = await gladys.scanNetwork('mdns', { timeoutSeconds: 10 });
     const gateway = results.find(
       (entry) => entry.name?.includes('enphase') || entry.txt?.includes('enphase'),
     );
-    const address = gateway?.addresses?.[0] ?? gateway?.host ?? null;
-    const ip = address ? String(address) : null;
-    if (!ip) return null;
+    const candidates = selectPrivateAddresses([
+      ...(gateway?.addresses ?? []),
+      ...(gateway?.host ? [gateway.host] : []),
+    ]);
 
-    // Only ever store a private address. A public hostname/IP must not become
-    // the target (and the recipient of our token) just because mDNS answered.
-    if (!isValidGatewayIp(ip)) {
-      logger.warn(`Discovered gateway address "${ip}" is not a private IP, ignoring it`);
+    if (candidates.length === 0) {
+      logger.warn('Discovered gateway advertised no usable private address, ignoring it');
       return null;
     }
 
     // When a token is already configured, prove the target actually accepts it
     // (and, when a cert pin is set, that it presents the pinned certificate)
-    // before persisting the IP.
+    // before persisting the IP. Try each candidate in turn.
     if (config.access_token) {
-      try {
-        await checkJwt(ip, config.access_token);
-      } catch (err) {
-        logger.warn(
-          `Discovered candidate at ${ip} did not validate (${err.code ?? err.status}), ignoring it`,
-        );
-        return null;
+      for (const ip of candidates) {
+        try {
+          await checkJwt(ip, config.access_token);
+          return ip;
+        } catch (err) {
+          logger.warn(
+            `Discovered candidate at ${ip} did not validate (${err.code ?? err.status}), trying the next one`,
+          );
+        }
       }
-    } else {
-      logger.info(`Found gateway candidate at ${ip}; a token is needed to confirm it`);
+      logger.warn('None of the discovered candidates accepted the configured token');
+      return null;
     }
-    return ip;
+
+    logger.info(`Found gateway candidate at ${candidates[0]}; a token is needed to confirm it`);
+    return candidates[0];
   } catch (err) {
     logger.error('mDNS scan failed', err);
     return null;
