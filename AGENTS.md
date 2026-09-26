@@ -41,7 +41,7 @@ The wiring (connection, auth, reconnection, dispatch) is in [`index.js`](./index
 
 To add a device type, create a new file in `src/devices/` following the same shape as the existing ones, then register it in `src/devices/index.js`. Business logic (the device modules) and utilities (`enphase.js`, `config.js`) are kept separate so the parts you edit stay small.
 
-The plumbing you would otherwise copy into every integration comes straight from the SDK (v0.12.0+):
+The plumbing you would otherwise copy into every integration comes straight from the SDK (v0.14.0+):
 
 - `logger` / `createLogger({ name })` — leveled console logger (`LOG_LEVEL` env var), with named/child loggers per module;
 - `DEVICE_FEATURE_CATEGORIES`, `DEVICE_FEATURE_TYPES`, `DEVICE_FEATURE_UNITS` — the standard Gladys categories / types / units, no manual string copying;
